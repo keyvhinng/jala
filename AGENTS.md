@@ -51,3 +51,10 @@ git branch -d feat/<task-slug>
 ```
 
 > **Note:** If the root checkout has uncommitted changes from another session, coordinate or stash before merging into `main`. Never force-reset `main` or delete another agent's active `.worktrees/*` directory.
+
+## Cursor Cloud specific instructions
+
+- The environment `start` script already launches Docker, `docker compose up -d postgres`, `bun run db:migrate`, `bun run db:seed`, and `bun run dev` on port 3000. Use that server when it is up.
+- `.env.local` is created from `.env.example` when it is missing. Those dev credentials match `docker-compose.yml`.
+- `bun run typecheck` needs Next.js route types. Install runs `bun x next typegen`. `bun dev` and `bun run build` generate the same types.
+- `bun run test` skips `tests/integration` unless `TEST_DATABASE_URL` is set to the same value as `DATABASE_URL`. The HTTP integration file also needs `TEST_APP_URL=http://localhost:3000` while the dev server is running.
