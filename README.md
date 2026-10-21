@@ -44,17 +44,19 @@ bun dev                        # http://localhost:3000
 
 ### Environment variables
 
-| Variable              | Required | Default                     | Description                                   |
-| --------------------- | -------- | --------------------------- | --------------------------------------------- |
-| `DATABASE_URL`        | yes      | –                           | PostgreSQL connection string                  |
-| `NEXT_PUBLIC_APP_URL` | no       | `http://localhost:3000`     | Public base URL                               |
-| `LOG_LEVEL`           | no       | `info`                      | `debug` \| `info` \| `warn` \| `error`        |
-| `ROUTING_BASE_URL`    | no       | public OSRM demo            | OSRM-compatible routing server                |
-| `RESEND_API_KEY`      | no       | – (log-only mailer)         | Enables password reset emails                 |
-| `MAIL_FROM`           | no       | `Jala <jala@jala.oak4.xyz>` | Sender for emails                             |
-| `VAPID_PUBLIC_KEY`    | no       | – (log-only push)           | Web Push key pair; enables room notifications |
-| `VAPID_PRIVATE_KEY`   | no       | –                           | Private half of the VAPID pair                |
-| `VAPID_SUBJECT`       | no       | `mailto:jala@jala.oak4.xyz` | Contact sent to push services                 |
+| Variable               | Required | Default                     | Description                                   |
+| ---------------------- | -------- | --------------------------- | --------------------------------------------- |
+| `DATABASE_URL`         | yes      | –                           | PostgreSQL connection string                  |
+| `NEXT_PUBLIC_APP_URL`  | no       | `http://localhost:3000`     | Public base URL                               |
+| `LOG_LEVEL`            | no       | `info`                      | `debug` \| `info` \| `warn` \| `error`        |
+| `ROUTING_BASE_URL`     | no       | public OSRM demo            | OSRM-compatible routing server                |
+| `RESEND_API_KEY`       | no       | – (log-only mailer)         | Enables password reset emails                 |
+| `MAIL_FROM`            | no       | `Jala <jala@jala.oak4.xyz>` | Sender for emails                             |
+| `VAPID_PUBLIC_KEY`     | no       | – (log-only push)           | Web Push key pair; enables room notifications |
+| `VAPID_PRIVATE_KEY`    | no       | –                           | Private half of the VAPID pair                |
+| `VAPID_SUBJECT`        | no       | `mailto:jala@jala.oak4.xyz` | Contact sent to push services                 |
+| `ATOMICMEMORY_API_URL` | no       | – (feature off)             | Atomic Memory API for saved ride preferences  |
+| `ATOMICMEMORY_API_KEY` | no       | –                           | Atomic Memory project key (server-side only)  |
 
 `.env.local` is git-ignored; never commit real credentials.
 
@@ -95,6 +97,7 @@ earlier deployment; it still works against the expanded schema.
 | `bun run db:seed`                 | Reseed fictional data (re-runnable)                        |
 | `bun run demo`                    | Reset, migrate and seed; prints demo URLs                  |
 | `bun run demo:crew <id> <step>`   | Act as the fictional passengers (confirm, start, complete) |
+| `bun run demo:memory-fixture`     | Local Atomic Memory fixture for saved ride preferences     |
 
 ## API
 
@@ -115,6 +118,7 @@ All responses are `{ "data": ... }` or `{ "error": { "code", "message", "details
 | `GET /api/sessions/:id/waiting-room`             | Roster, own destination and own group proposal; `?rev=` returns only the clock when unchanged |
 | `GET /api/sessions/:id/participants/:pid/selfie` | A party member's photo, for that party only                                                   |
 | `POST`/`DELETE /api/push/subscriptions`          | Link or unlink this browser for room notifications                                            |
+| `GET`/`PUT`/`DELETE /api/ride-preferences`       | Own saved ride preferences (optional, [docs](docs/ride-preferences.md))                       |
 | `GET /api/health`                                | Liveness + database check (503 if DB is down)                                                 |
 | `GET /api/sessions?placeId=&status=&limit=`      | List sessions with participant counts                                                         |
 | `GET /api/sessions/:id`                          | Session detail                                                                                |

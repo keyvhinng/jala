@@ -6,6 +6,7 @@ import type { RideDraft } from "@/components/sessions/ride-form";
 import { getServices } from "@/lib/services";
 import { DEPARTURE_CHOICES } from "@/modules/sessions/domain/affinity";
 import { readIdentity } from "@/modules/participants/infrastructure/browser-identity";
+import { readRidePreferences } from "@/modules/ride-preferences/application/ride-preferences.service";
 
 export const metadata: Metadata = { title: "Compartir un taxi" };
 
@@ -75,13 +76,33 @@ function readDraft(raw: Record<string, string | string[] | undefined>) {
   } satisfies RideDraft;
 }
 
+/** The room the rider is already in, and their saved preferences (never blocking). */
+function forAccount(userId: string) {
+  const services = getServices();
+  return Promise.all([
+    services.participation.activeFor(userId),
+    readRidePreferences(services.ridePreferences, userId),
+  ]);
+}
+
 export default async function RidePage({ searchParams }: PageProps<"/ride">) {
   await connection();
-  const draft = readDraft(await searchParams);
+  const params = await searchParams;
   const identity = await readIdentity();
-  const active = identity
-    ? await getServices().participation.activeFor(identity.userId)
-    : null;
+  const [active, saved] = identity
+    ? await forAccount(identity.userId)
+    : [null, null];
+  // Saved preferences only fill what the link did not say; the form can still change them.
+  const preferences = saved?.status === "ready" ? saved.preferences : null;
+  const linked = readDraft(params);
+  const draft: RideDraft = {
+    ...linked,
+    departInMinutes:
+      params.when === undefined
+        ? (preferences?.departInMinutes ?? linked.departInMinutes)
+        : linked.departInMinutes,
+    delegatePreference: preferences?.delegatePreference,
+  };
   return (
     <div className="ride-page">
       <header className="page-heading">

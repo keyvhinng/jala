@@ -4,11 +4,14 @@ export async function sessionApi<T>(
   path: string,
   body?: unknown,
   signal?: AbortSignal,
+  method: "GET" | "POST" | "PUT" | "DELETE" = body === undefined
+    ? "GET"
+    : "POST",
 ): Promise<T> {
   let response: Response;
   try {
     response = await fetch(path, {
-      method: body === undefined ? "GET" : "POST",
+      method,
       headers:
         body === undefined ? undefined : { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),

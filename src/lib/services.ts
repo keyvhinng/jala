@@ -18,6 +18,7 @@ import { createParticipationRepository } from "@/modules/sessions/infrastructure
 import { getDb } from "@/db";
 import { createAuthService } from "@/modules/auth/application/auth.service";
 import { createAuthRepository } from "@/modules/auth/infrastructure/auth.repository";
+import { createAtomicMemoryRidePreferences } from "@/modules/ride-preferences/infrastructure/atomic-memory-ride-preferences";
 import { createSessionService } from "@/modules/sessions/application/session.service";
 import { createSessionRepository } from "@/modules/sessions/infrastructure/session.repository";
 
@@ -58,6 +59,14 @@ export function getServices() {
     participation: createParticipationRepository(db),
     parties: createPartyRepository(db),
     partyMessages: createPartyMessageRepository(db),
+    // Optional: without Atomic Memory the planner starts from its usual defaults.
+    ridePreferences:
+      env.ATOMICMEMORY_API_URL && env.ATOMICMEMORY_API_KEY
+        ? createAtomicMemoryRidePreferences({
+            apiUrl: env.ATOMICMEMORY_API_URL,
+            apiKey: env.ATOMICMEMORY_API_KEY,
+          })
+        : null,
     sessions: createSessionService(createSessionRepository(db)),
   };
 }

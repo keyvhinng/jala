@@ -27,6 +27,15 @@ const envSchema = z.object({
     blankToUndefined,
     z.string().min(1).optional(),
   ),
+  /** Atomic Memory API and project key. Both are required to offer saved ride preferences. */
+  ATOMICMEMORY_API_URL: z.preprocess(
+    blankToUndefined,
+    z.string().url().optional(),
+  ),
+  ATOMICMEMORY_API_KEY: z.preprocess(
+    blankToUndefined,
+    z.string().min(1).optional(),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;

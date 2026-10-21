@@ -796,6 +796,45 @@
   font-size: 14px;
   color: var(--j-muted);
 }
+/* Saved ride preferences (Cuenta), and the note on the trip screen that uses them. */
+.j-prefs {
+  border: 1px solid var(--j-line);
+  border-radius: 15px;
+  padding: 18px 16px;
+  margin-bottom: 18px;
+}
+.j-prefs h2 {
+  font-size: 17px;
+  font-weight: 800;
+}
+.j-prefs-intro {
+  margin: 6px 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--j-muted);
+}
+.j-prefs .j-options-hint {
+  margin: 0 0 14px;
+}
+.j-prefs-status {
+  min-height: 1.4em;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--j-muted);
+}
+.j-saved-prefs {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--j-muted);
+}
+.j-saved-prefs button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 700;
+  color: var(--j-ink);
+  text-decoration: underline;
+}
 /* Trip screen: the shared address pickers and ride map from the live flow. */
 .j-trip {
   display: grid;

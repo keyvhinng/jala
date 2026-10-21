@@ -31,7 +31,10 @@ import {
   LocationPicker,
   type PickedLocation,
 } from "@/components/sessions/location-picker";
-import { saveRideDraft } from "@/components/sessions/ride-draft";
+import {
+  clearRideDraft,
+  saveRideDraft,
+} from "@/components/sessions/ride-draft";
 import {
   ASAP_HINT,
   DEFAULT_MAP_CENTER,
@@ -40,6 +43,11 @@ import {
 } from "@/components/sessions/ride-form";
 import { RideMap, type RideEnd } from "@/components/sessions/ride-map";
 import { sessionApi } from "@/components/sessions/session-api";
+import type {
+  RidePreferences,
+  RidePreferencesState,
+} from "@/modules/ride-preferences/domain/ride-preferences";
+import { RidePreferencesCard } from "./ride-preferences-card";
 
 type Screen = "login" | "home" | "destination" | "trips" | "account";
 
@@ -88,6 +96,21 @@ function Primary({
 }
 
 /**
+ * Saved choices become the planner's starting point; forgetting them resets it to the
+ * usual defaults. Null when nothing could be read, so the planner stays as it is.
+ */
+function plannerStart(
+  state: RidePreferencesState,
+): { departure: DepartureChoice; delegate: boolean } | null {
+  if (state.status !== "ready") return null;
+  const saved: RidePreferences | null = state.preferences;
+  return {
+    departure: saved?.departInMinutes ?? 0,
+    delegate: saved?.delegatePreference === "delegate",
+  };
+}
+
+/**
  * The signed-in passenger's home: plan a route on Inicio, then search real rooms in
  * the live flow (/ride), where groups, chat and the ride itself happen. Jala only
  * serves signed-in people, so without a session this shows the sign-in choices.
@@ -107,7 +130,12 @@ export function PassengerJourney({
   const [mapEnd, setMapEnd] = useState<RideEnd>("origin");
   const [mapFocus, setMapFocus] = useState<GeoPoint | null>(null);
   const [departure, setDeparture] = useState<DepartureChoice>(0);
+  const plannerEdited = useRef(false);
   const [delegate, setDelegate] = useState(false);
+  // Null until loaded for a signed-in account.
+  const [preferences, setPreferences] = useState<RidePreferencesState | null>(
+    null,
+  );
   const heading = useRef<HTMLHeadingElement>(null);
   const nav = (next: Screen) => setScreen(next);
 
@@ -122,14 +150,35 @@ export function PassengerJourney({
       .then((me) => {
         if (stale) return;
         setAccount(me);
-        if (me)
-          setScreen((current) => (current === "login" ? "home" : current));
+        if (!me) return;
+        setScreen((current) => (current === "login" ? "home" : current));
+        // Saved preferences are optional: without them the planner keeps its defaults.
+        sessionApi<RidePreferencesState>("/api/ride-preferences")
+          .then((saved) => {
+            if (stale) return;
+            setPreferences(saved);
+            const start = plannerStart(saved);
+            if (!start || plannerEdited.current) return;
+            setDeparture(start.departure);
+            setDelegate(start.delegate);
+          })
+          .catch(() => {});
       })
       .catch(() => !stale && setAccount(null));
     return () => {
       stale = true;
     };
   }, []);
+
+  function changePreferences(next: RidePreferencesState) {
+    setPreferences(next);
+    const start = plannerStart(next);
+    if (!start) return;
+    setDeparture(start.departure);
+    setDelegate(start.delegate);
+  }
+  const savedPreferences =
+    preferences?.status === "ready" ? preferences.preferences : null;
 
   const originName = origin?.label.split(",")[0].trim() ?? "";
   const routeReady = Boolean(
@@ -168,6 +217,14 @@ export function PassengerJourney({
   const signOut = () => {
     nav("login");
     setAccount(null);
+    setPreferences(null);
+    setOrigin(null);
+    setDestination(null);
+    setDeparture(0);
+    setDelegate(false);
+    plannerEdited.current = false;
+    // A route planned in this tab must not greet the next account that signs in here.
+    clearRideDraft();
     // This browser must stop receiving the account's notifications; needs the session.
     void disablePush()
       .catch(() => {})
@@ -435,6 +492,14 @@ export function PassengerJourney({
                 />
               </div>
               <div className="j-trip-details">
+                {savedPreferences && (
+                  <p className="j-saved-prefs">
+                    Empezamos con tus preferencias guardadas.{" "}
+                    <button type="button" onClick={() => nav("account")}>
+                      Cambiarlas
+                    </button>
+                  </p>
+                )}
                 <fieldset className="j-options">
                   <legend>¿Cuándo sales?</legend>
                   <div>
@@ -443,7 +508,10 @@ export function PassengerJourney({
                         type="button"
                         key={n}
                         aria-pressed={departure === n}
-                        onClick={() => setDeparture(n)}
+                        onClick={() => {
+                          plannerEdited.current = true;
+                          setDeparture(n);
+                        }}
                       >
                         {WHEN_LABELS[n]}
                       </button>
@@ -459,7 +527,10 @@ export function PassengerJourney({
                     <button
                       type="button"
                       aria-pressed={!delegate}
-                      onClick={() => setDelegate(false)}
+                      onClick={() => {
+                        plannerEdited.current = true;
+                        setDelegate(false);
+                      }}
                     >
                       <strong>{ROLE_COPY.passenger.title}</strong>
                       <small>{ROLE_COPY.passenger.detail}</small>
@@ -467,7 +538,10 @@ export function PassengerJourney({
                     <button
                       type="button"
                       aria-pressed={delegate}
-                      onClick={() => setDelegate(true)}
+                      onClick={() => {
+                        plannerEdited.current = true;
+                        setDelegate(true);
+                      }}
                     >
                       <strong>{ROLE_COPY.delegate.title}</strong>
                       <small>{ROLE_COPY.delegate.detail}</small>
@@ -507,6 +581,12 @@ export function PassengerJourney({
                   </p>
                 )}
               </div>
+              {preferences && preferences.status !== "disabled" && (
+                <RidePreferencesCard
+                  state={preferences}
+                  onChange={changePreferences}
+                />
+              )}
               <button className="j-secondary" onClick={signOut}>
                 Cerrar sesión
               </button>

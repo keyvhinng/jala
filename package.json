@@ -19,6 +19,7 @@
     "db:reset": "bun --env-file=.env.local scripts/reset-db.ts",
     "db:seed": "bun --env-file=.env.local scripts/seed.ts",
     "demo:crew": "bun --env-file=.env.local scripts/demo-crew.ts",
+    "demo:memory-fixture": "bun --env-file=.env.local scripts/atomic-memory-fixture.ts",
     "demo": "bun run db:reset && bun run db:seed"
   },
   "dependencies": {
